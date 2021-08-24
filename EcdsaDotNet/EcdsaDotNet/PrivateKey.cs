@@ -1,100 +1,97 @@
-﻿using System.Collections.Generic;
-using System.Numerics;
 using System;
+using System.Collections.Generic;
+using System.Numerics;
+using EllipticCurve.Utils;
 
+namespace EllipticCurve
+{
+    public class PrivateKey
+    {
+        public PrivateKey(string curve = "secp256k1", BigInteger? secret = null)
+        {
+            Curve = Curves.GetCurveByName(curve);
 
-namespace EllipticCurve {
-
-    public class PrivateKey {
-
-        public CurveFp curve { get; private set; }
-        public BigInteger secret { get; private set; }
-
-        public PrivateKey(string curve="secp256k1", BigInteger? secret=null) {
-            this.curve = Curves.getCurveByName(curve);
-
-            if (secret == null) {
-                secret = Utils.Integer.randomBetween(1, this.curve.N - 1);
-            }
-            this.secret = (BigInteger)secret;
+            if (secret == null) secret = Integer.RandomBetween(1, Curve.N - 1);
+            Secret = (BigInteger)secret;
         }
 
-        public PublicKey publicKey() {
-            Point publicPoint = EcdsaMath.multiply(curve.G, secret, curve.N, curve.A, curve.P);
-            return new PublicKey(publicPoint, curve);
+        public CurveFp Curve { get; }
+        public BigInteger Secret { get; }
+
+        public PublicKey PublicKey()
+        {
+            var publicPoint = EcdsaMath.Multiply(Curve.G, Secret, Curve.N, Curve.A, Curve.P);
+            return new PublicKey(publicPoint, Curve);
         }
 
-        public byte[] toString() {
-            return Utils.BinaryAscii.stringFromNumber(secret, curve.length());
+        public byte[] ToString()
+        {
+            return BinaryAscii.StringFromNumber(Secret, Curve.Length());
         }
 
-        public byte[] toDer() {
-            byte[] encodedPublicKey = publicKey().toString(true);
+        public byte[] ToDer()
+        {
+            var encodedPublicKey = PublicKey().ToString(true);
 
-            return Utils.Der.encodeSequence(
-                new List<byte[]> {
-                    Utils.Der.encodeInteger(1),
-                    Utils.Der.encodeOctetString(toString()),
-                    Utils.Der.encodeConstructed(0, Utils.Der.encodeOid(curve.oid)),
-                    Utils.Der.encodeConstructed(1, encodedPublicKey)
+            return Der.EncodeSequence(
+                new List<byte[]>
+                {
+                    Der.EncodeInteger(1),
+                    Der.EncodeOctetString(ToString()),
+                    Der.EncodeConstructed(0, Der.EncodeOid(Curve.Oid)),
+                    Der.EncodeConstructed(1, encodedPublicKey)
                 }
             );
         }
 
-        public string toPem() {
-            return Utils.Der.toPem(toDer(), "EC PRIVATE KEY");
+        public string ToPem()
+        {
+            return Der.ToPem(ToDer(), "EC PRIVATE KEY");
         }
 
-        public static PrivateKey fromPem (string str) {
-            string[] split = str.Split(new string[] { "-----BEGIN EC PRIVATE KEY-----" }, StringSplitOptions.None);
+        public static PrivateKey FromPem(string str)
+        {
+            var split = str.Split(new[] { "-----BEGIN EC PRIVATE KEY-----" }, StringSplitOptions.None);
 
-            if (split.Length != 2) {
-                throw new ArgumentException("invalid PEM");
-            }
+            if (split.Length != 2) throw new ArgumentException("invalid PEM");
 
-            return fromDer(Utils.Der.fromPem(split[1]));
+            return FromDer(Der.FromPem(split[1]));
         }
 
-        public static PrivateKey fromDer (byte[] der) {
-            Tuple<byte[], byte[]> removeSequence = Utils.Der.removeSequence(der);
-            if (removeSequence.Item2.Length > 0) {
-                throw new ArgumentException("trailing junk after DER private key: " + Utils.BinaryAscii.hexFromBinary(removeSequence.Item2));
-            }
+        public static PrivateKey FromDer(byte[] der)
+        {
+            var removeSequence = Der.RemoveSequence(der);
+            if (removeSequence.Item2.Length > 0)
+                throw new ArgumentException("trailing junk after DER private key: " +
+                                            BinaryAscii.HexFromBinary(removeSequence.Item2));
 
-            Tuple<BigInteger, byte[]> removeInteger = Utils.Der.removeInteger(removeSequence.Item1);
-            if (removeInteger.Item1 != 1) {
-                throw new ArgumentException("expected '1' at start of DER private key, got " + removeInteger.Item1.ToString());
-            }
+            var removeInteger = Der.RemoveInteger(removeSequence.Item1);
+            if (removeInteger.Item1 != 1)
+                throw new ArgumentException("expected '1' at start of DER private key, got " + removeInteger.Item1);
 
-            Tuple<byte[], byte[]> removeOctetString = Utils.Der.removeOctetString(removeInteger.Item2);
-            byte[] privateKeyStr = removeOctetString.Item1;
+            var removeOctetString = Der.RemoveOctetString(removeInteger.Item2);
+            var privateKeyStr = removeOctetString.Item1;
 
-            Tuple<int, byte[], byte[]> removeConstructed = Utils.Der.removeConstructed(removeOctetString.Item2);
-            int tag = removeConstructed.Item1;
-            byte[] curveOidString = removeConstructed.Item2;
-            if (tag != 0) {
-                throw new ArgumentException("expected tag 0 in DER private key, got " + tag.ToString());
-            }
+            var removeConstructed = Der.RemoveConstructed(removeOctetString.Item2);
+            var tag = removeConstructed.Item1;
+            var curveOidString = removeConstructed.Item2;
+            if (tag != 0) throw new ArgumentException("expected tag 0 in DER private key, got " + tag);
 
-            Tuple<int[], byte[]> removeObject = Utils.Der.removeObject(curveOidString);
-            int[] oidCurve = removeObject.Item1;
-            if (removeObject.Item2.Length > 0) {
+            var removeObject = Der.RemoveObject(curveOidString);
+            var oidCurve = removeObject.Item1;
+            if (removeObject.Item2.Length > 0)
                 throw new ArgumentException(
                     "trailing junk after DER private key curve_oid: " +
-                    Utils.BinaryAscii.hexFromBinary(removeObject.Item2)
+                    BinaryAscii.HexFromBinary(removeObject.Item2)
                 );
-            }
 
-            string stringOid = string.Join(",", oidCurve);
+            var stringOid = string.Join(",", oidCurve);
 
-            if (!Curves.curvesByOid.ContainsKey(stringOid))
+            if (!Curves.CurvesByOid.ContainsKey(stringOid))
             {
-                int numCurves = Curves.supportedCurves.Length;
-                string[] supportedCurves = new string[numCurves];
-                for (int i = 0; i < numCurves; i++)
-                {
-                    supportedCurves[i] = Curves.supportedCurves[i].name;
-                }
+                var numCurves = Curves.SupportedCurves.Length;
+                var supportedCurves = new string[numCurves];
+                for (var i = 0; i < numCurves; i++) supportedCurves[i] = Curves.SupportedCurves[i].Name;
                 throw new ArgumentException(
                     "Unknown curve with oid [" +
                     string.Join(", ", oidCurve) +
@@ -103,23 +100,23 @@ namespace EllipticCurve {
                 );
             }
 
-            CurveFp curve = Curves.curvesByOid[stringOid];
+            var curve = Curves.CurvesByOid[stringOid];
 
-            if (privateKeyStr.Length < curve.length()) {
-                int length = curve.length() - privateKeyStr.Length;
-                string padding = "";
-                for (int i = 0; i < length; i++) {
-                    padding += "00";
-                }
-                    privateKeyStr = Utils.Der.combineByteArrays(new List<byte[]> { Utils.BinaryAscii.binaryFromHex(padding), privateKeyStr });
+            if (privateKeyStr.Length < curve.Length())
+            {
+                var length = curve.Length() - privateKeyStr.Length;
+                var padding = "";
+                for (var i = 0; i < length; i++) padding += "00";
+                privateKeyStr = Der.CombineByteArrays(new List<byte[]>
+                    { BinaryAscii.BinaryFromHex(padding), privateKeyStr });
             }
 
-            return fromString(privateKeyStr, curve.name);
-
+            return FromString(privateKeyStr, curve.Name);
         }
 
-        public static PrivateKey fromString (byte[] str, string curve="secp256k1") {
-            return new PrivateKey(curve, Utils.BinaryAscii.numberFromString(str));
+        public static PrivateKey FromString(byte[] str, string curve = "secp256k1")
+        {
+            return new PrivateKey(curve, BinaryAscii.NumberFromString(str));
         }
     }
 }

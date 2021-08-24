@@ -1,99 +1,105 @@
-﻿using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+using EllipticCurve.Utils;
 
-
-namespace EllipticCurve {
-
-    public class PublicKey {
-
-        public Point point { get; }
-
-        public CurveFp curve { get; private set; }
-
-        public PublicKey(Point point, CurveFp curve) {
-            this.point = point;
-            this.curve = curve;
+namespace EllipticCurve
+{
+    public class PublicKey
+    {
+        public PublicKey(Point point, CurveFp curve)
+        {
+            Point = point;
+            Curve = curve;
         }
 
-        public byte[] toString(bool encoded=false) {
-            byte[] xString = Utils.BinaryAscii.stringFromNumber(point.x, curve.length());
-            byte[] yString = Utils.BinaryAscii.stringFromNumber(point.y, curve.length());
+        public Point Point { get; }
 
-            if (encoded) {
-                return Utils.Der.combineByteArrays(new List<byte[]> {
-                    Utils.BinaryAscii.binaryFromHex("00"),
-                    Utils.BinaryAscii.binaryFromHex("04"), 
+        public CurveFp Curve { get; }
+
+        public byte[] ToString(bool encoded = false)
+        {
+            var xString = BinaryAscii.StringFromNumber(Point.X, Curve.Length());
+            var yString = BinaryAscii.StringFromNumber(Point.Y, Curve.Length());
+
+            if (encoded)
+                return Der.CombineByteArrays(new List<byte[]>
+                {
+                    BinaryAscii.BinaryFromHex("00"),
+                    BinaryAscii.BinaryFromHex("04"),
                     xString,
                     yString
                 });
-            }
-            return Utils.Der.combineByteArrays(new List<byte[]> {
+            return Der.CombineByteArrays(new List<byte[]>
+            {
                 xString,
                 yString
             });
         }
 
-        public byte[] toDer() {
+        public byte[] ToDer()
+        {
             int[] oidEcPublicKey = { 1, 2, 840, 10045, 2, 1 };
-            byte[] encodedEcAndOid = Utils.Der.encodeSequence(
-                new List<byte[]> {
-                    Utils.Der.encodeOid(oidEcPublicKey),
-                    Utils.Der.encodeOid(curve.oid)
+            var encodedEcAndOid = Der.EncodeSequence(
+                new List<byte[]>
+                {
+                    Der.EncodeOid(oidEcPublicKey),
+                    Der.EncodeOid(Curve.Oid)
                 }
             );
 
-            return Utils.Der.encodeSequence(
-                new List<byte[]> {
+            return Der.EncodeSequence(
+                new List<byte[]>
+                {
                     encodedEcAndOid,
-                    Utils.Der.encodeBitString(toString(true))
+                    Der.EncodeBitString(ToString(true))
                 }
             );
         }
 
-        public string toPem() {
-            return Utils.Der.toPem(toDer(), "PUBLIC KEY");
+        public string ToPem()
+        {
+            return Der.ToPem(ToDer(), "PUBLIC KEY");
         }
 
-        public static PublicKey fromPem(string pem) {
-            return fromDer(Utils.Der.fromPem(pem));
+        public static PublicKey FromPem(string pem)
+        {
+            return FromDer(Der.FromPem(pem));
         }
 
-        public static PublicKey fromDer(byte[] der) {
-            Tuple<byte[], byte[]> removeSequence1 = Utils.Der.removeSequence(der);
-            byte[] s1 = removeSequence1.Item1;
+        public static PublicKey FromDer(byte[] der)
+        {
+            var removeSequence1 = Der.RemoveSequence(der);
+            var s1 = removeSequence1.Item1;
 
-            if (removeSequence1.Item2.Length > 0) {
+            if (removeSequence1.Item2.Length > 0)
                 throw new ArgumentException(
                     "trailing junk after DER public key: " +
-                    Utils.BinaryAscii.hexFromBinary(removeSequence1.Item2)
+                    BinaryAscii.HexFromBinary(removeSequence1.Item2)
                 );
-            }
 
-            Tuple<byte[], byte[]> removeSequence2 = Utils.Der.removeSequence(s1);
-            byte[] s2 = removeSequence2.Item1;
-            byte[] pointBitString = removeSequence2.Item2;
+            var removeSequence2 = Der.RemoveSequence(s1);
+            var s2 = removeSequence2.Item1;
+            var pointBitString = removeSequence2.Item2;
 
-            Tuple<int[], byte[]> removeObject1 = Utils.Der.removeObject(s2);
-            byte[] rest = removeObject1.Item2;
+            var removeObject1 = Der.RemoveObject(s2);
+            var rest = removeObject1.Item2;
 
-            Tuple<int[], byte[]> removeObject2 = Utils.Der.removeObject(rest);
-            int[] oidCurve = removeObject2.Item1;
+            var removeObject2 = Der.RemoveObject(rest);
+            var oidCurve = removeObject2.Item1;
 
-            if (removeObject2.Item2.Length > 0) {
+            if (removeObject2.Item2.Length > 0)
                 throw new ArgumentException(
                     "trailing junk after DER public key objects: " +
-                    Utils.BinaryAscii.hexFromBinary(removeObject2.Item2)
+                    BinaryAscii.HexFromBinary(removeObject2.Item2)
                 );
-            }
 
-            string stringOid = string.Join(",", oidCurve);
+            var stringOid = string.Join(",", oidCurve);
 
-            if (!Curves.curvesByOid.ContainsKey(stringOid)) {
-                int numCurves = Curves.supportedCurves.Length;
-                string[] supportedCurves = new string[numCurves];
-                for (int i=0; i < numCurves; i++) {
-                    supportedCurves[i] = Curves.supportedCurves[i].name;
-                }
+            if (!Curves.CurvesByOid.ContainsKey(stringOid))
+            {
+                var numCurves = Curves.SupportedCurves.Length;
+                var supportedCurves = new string[numCurves];
+                for (var i = 0; i < numCurves; i++) supportedCurves[i] = Curves.SupportedCurves[i].Name;
                 throw new ArgumentException(
                     "Unknown curve with oid [" +
                     string.Join(", ", oidCurve) +
@@ -102,51 +108,45 @@ namespace EllipticCurve {
                 );
             }
 
-            CurveFp curve = Curves.curvesByOid[stringOid];
+            var curve = Curves.CurvesByOid[stringOid];
 
-            Tuple<byte[], byte[]> removeBitString = Utils.Der.removeBitString(pointBitString);
-            byte[] pointString = removeBitString.Item1;
+            var removeBitString = Der.RemoveBitString(pointBitString);
+            var pointString = removeBitString.Item1;
 
-            if (removeBitString.Item2.Length > 0) {
+            if (removeBitString.Item2.Length > 0)
                 throw new ArgumentException("trailing junk after public key point-string");
-            }
 
-            return fromString(Utils.Bytes.sliceByteArray(pointString, 2), curve.name);
-
+            return FromString(Bytes.SliceByteArray(pointString, 2), curve.Name);
         }
 
-        public static PublicKey fromString(byte[] str, string curve="secp256k1", bool validatePoint=true) {
-            CurveFp curveObject = Curves.getCurveByName(curve);
+        public static PublicKey FromString(byte[] str, string curve = "secp256k1", bool validatePoint = true)
+        {
+            var curveObject = Curves.GetCurveByName(curve);
 
-            int baseLen = curveObject.length();
+            var baseLen = curveObject.Length();
 
-            if (str.Length != 2 * baseLen) {
+            if (str.Length != 2 * baseLen)
                 throw new ArgumentException("string length [" + str.Length + "] should be " + 2 * baseLen);
-            }
 
-            string xs = Utils.BinaryAscii.hexFromBinary(Utils.Bytes.sliceByteArray(str, 0, baseLen));
-            string ys = Utils.BinaryAscii.hexFromBinary(Utils.Bytes.sliceByteArray(str, baseLen));
+            var xs = BinaryAscii.HexFromBinary(Bytes.SliceByteArray(str, 0, baseLen));
+            var ys = BinaryAscii.HexFromBinary(Bytes.SliceByteArray(str, baseLen));
 
-            Point p = new Point(
-                Utils.BinaryAscii.numberFromHex(xs),
-                Utils.BinaryAscii.numberFromHex(ys)
+            var p = new Point(
+                BinaryAscii.NumberFromHex(xs),
+                BinaryAscii.NumberFromHex(ys)
             );
 
-            if (validatePoint & !curveObject.contains(p)) {
+            if (validatePoint & !curveObject.Contains(p))
                 throw new ArgumentException(
                     "point (" +
-                    p.x.ToString() +
+                    p.X +
                     ", " +
-                    p.y.ToString() +
+                    p.Y +
                     ") is not valid for curve " +
-                    curveObject.name
+                    curveObject.Name
                 );
-            }
 
             return new PublicKey(p, curveObject);
-
         }
-
     }
-
 }

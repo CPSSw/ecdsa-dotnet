@@ -1,11 +1,12 @@
-﻿using System.Numerics;
+using System.Numerics;
+using EllipticCurve.Utils;
 
-
-namespace EllipticCurve {
-
-    public static class EcdsaMath {
-
-        public static Point multiply (Point p, BigInteger n, BigInteger N, BigInteger A, BigInteger P) {
+namespace EllipticCurve
+{
+    public static class EcdsaMath
+    {
+        public static Point Multiply(Point p, BigInteger n, BigInteger order, BigInteger coef, BigInteger primenum)
+        {
             //Fast way to multily point and scalar in elliptic curves
 
             //:param p: First Point to mutiply
@@ -15,19 +16,20 @@ namespace EllipticCurve {
             //:param A: Coefficient of the first-order term of the equation Y ^ 2 = X ^ 3 + A * X + B(mod p)
             //:return: Point that represents the sum of First and Second Point
 
-            return fromJacobian(
-                jacobianMultiply(
-                    toJacobian(p),
+            return FromJacobian(
+                JacobianMultiply(
+                    ToJacobian(p),
                     n,
-                    N,
-                    A,
-                    P
+                    order,
+                    coef,
+                    primenum
                 ),
-                P
+                primenum
             );
         }
 
-        public static Point add (Point p, Point q, BigInteger A, BigInteger P) {
+        public static Point Add(Point p, Point q, BigInteger a, BigInteger pNumber)
+        {
             //Fast way to add two points in elliptic curves
 
             //:param p: First Point you want to add
@@ -36,39 +38,38 @@ namespace EllipticCurve {
             //:param A: Coefficient of the first-order term of the equation Y ^ 2 = X ^ 3 + A * X + B(mod p)
             //:return: Point that represents the sum of First and Second Point
 
-            return fromJacobian(
-                jacobianAdd(
-                    toJacobian(p),
-                    toJacobian(q),
-                    A,
-                    P
+            return FromJacobian(
+                JacobianAdd(
+                    ToJacobian(p),
+                    ToJacobian(q),
+                    a,
+                    pNumber
                 ),
-                P
+                pNumber
             );
         }
 
-        public static BigInteger inv (BigInteger x, BigInteger n) {
+        public static BigInteger Inv(BigInteger x, BigInteger n)
+        {
             //Extended Euclidean Algorithm.It's the 'division' in elliptic curves
 
             //:param x: Divisor
             //: param n: Mod for division
             //:return: Value representing the division
 
-            if (x.IsZero) {
-                return 0;
-            }
+            if (x.IsZero) return 0;
 
-            BigInteger lm = BigInteger.One;
-            BigInteger hm = BigInteger.Zero;
-            BigInteger low = Utils.Integer.modulo(x, n);
-            BigInteger high = n;
-            BigInteger r, nm, newLow;
+            var lm = BigInteger.One;
+            var hm = BigInteger.Zero;
+            var low = Integer.Modulo(x, n);
+            var high = n;
 
-            while (low > 1) {
-                r = high / low;
+            while (low > 1)
+            {
+                var r = high / low;
 
-                nm = hm - (lm * r);
-                newLow = high - (low * r);
+                var nm = hm - lm * r;
+                var newLow = high - low * r;
 
                 high = low;
                 hm = lm;
@@ -76,35 +77,37 @@ namespace EllipticCurve {
                 lm = nm;
             }
 
-            return Utils.Integer.modulo(lm, n);
-
+            return Integer.Modulo(lm, n);
         }
 
-        private static Point toJacobian (Point p) {
+        private static Point ToJacobian(Point p)
+        {
             //Convert point to Jacobian coordinates
 
             //: param p: First Point you want to add
             //:return: Point in Jacobian coordinates
 
-            return new Point(p.x, p.y, 1);
+            return new Point(p.X, p.Y, 1);
         }
 
-        private static Point fromJacobian (Point p, BigInteger P) {
+        private static Point FromJacobian(Point p, BigInteger primeNumber)
+        {
             //Convert point back from Jacobian coordinates
 
             //:param p: First Point you want to add
             //:param P: Prime number in the module of the equation Y^2 = X ^ 3 + A * X + B(mod p)
             //:return: Point in default coordinates
 
-            BigInteger z = inv(p.z, P);
+            var z = Inv(p.Z, primeNumber);
 
             return new Point(
-                Utils.Integer.modulo(p.x * BigInteger.Pow(z, 2), P),
-                Utils.Integer.modulo(p.y * BigInteger.Pow(z, 3), P)
+                Integer.Modulo(p.X * BigInteger.Pow(z, 2), primeNumber),
+                Integer.Modulo(p.Y * BigInteger.Pow(z, 3), primeNumber)
             );
         }
 
-        private static Point jacobianDouble (Point p, BigInteger A, BigInteger P) {
+        private static Point JacobianDouble(Point p, BigInteger a, BigInteger primeNum)
+        {
             //Double a point in elliptic curves
 
             //:param p: Point you want to double
@@ -112,38 +115,37 @@ namespace EllipticCurve {
             //:param A: Coefficient of the first-order term of the equation Y ^ 2 = X ^ 3 + A * X + B(mod p)
             //:return: Point that represents the sum of First and Second Point
 
-            if (p.y.IsZero) {
+            if (p.Y.IsZero)
                 return new Point(
                     BigInteger.Zero,
                     BigInteger.Zero,
                     BigInteger.Zero
                 );
-            }
 
-            BigInteger ysq = Utils.Integer.modulo(
-                BigInteger.Pow(p.y, 2),
-                P
+            var ysq = Integer.Modulo(
+                BigInteger.Pow(p.Y, 2),
+                primeNum
             );
-            BigInteger S = Utils.Integer.modulo(
-                4 * p.x * ysq,
-                P
+            var s = Integer.Modulo(
+                4 * p.X * ysq,
+                primeNum
             );
-            BigInteger M = Utils.Integer.modulo(
-                3 * BigInteger.Pow(p.x, 2) + A * BigInteger.Pow(p.z, 4),
-                P
+            var m = Integer.Modulo(
+                3 * BigInteger.Pow(p.X, 2) + a * BigInteger.Pow(p.Z, 4),
+                primeNum
             );
 
-            BigInteger nx = Utils.Integer.modulo(
-                BigInteger.Pow(M, 2) - 2 * S,
-                P
+            var nx = Integer.Modulo(
+                BigInteger.Pow(m, 2) - 2 * s,
+                primeNum
             );
-            BigInteger ny = Utils.Integer.modulo(
-                M * (S - nx) - 8 * BigInteger.Pow(ysq, 2),
-                P
+            var ny = Integer.Modulo(
+                m * (s - nx) - 8 * BigInteger.Pow(ysq, 2),
+                primeNum
             );
-            BigInteger nz = Utils.Integer.modulo(
-                2 * p.y * p.z,
-                P
+            var nz = Integer.Modulo(
+                2 * p.Y * p.Z,
+                primeNum
             );
 
             return new Point(
@@ -153,7 +155,8 @@ namespace EllipticCurve {
             );
         }
 
-        private static Point jacobianAdd (Point p, Point q, BigInteger A, BigInteger P) {
+        private static Point JacobianAdd(Point p, Point q, BigInteger a, BigInteger primeNum)
+        {
             // Add two points in elliptic curves
 
             // :param p: First Point you want to add
@@ -162,53 +165,48 @@ namespace EllipticCurve {
             // :param A: Coefficient of the first-order term of the equation Y^2 = X^3 + A*X + B (mod p)
             // :return: Point that represents the sum of First and Second Point
 
-            if (p.y.IsZero) {
-                return q;
-            }
-            if (q.y.IsZero) {
-                return p;
-            }
+            if (p.Y.IsZero) return q;
+            if (q.Y.IsZero) return p;
 
-            BigInteger U1 = Utils.Integer.modulo(
-                p.x * BigInteger.Pow(q.z, 2),
-                P
+            var u1 = Integer.Modulo(
+                p.X * BigInteger.Pow(q.Z, 2),
+                primeNum
             );
-            BigInteger U2 = Utils.Integer.modulo(
-                q.x * BigInteger.Pow(p.z, 2),
-                P
+            var u2 = Integer.Modulo(
+                q.X * BigInteger.Pow(p.Z, 2),
+                primeNum
             );
-            BigInteger S1 = Utils.Integer.modulo(
-                p.y * BigInteger.Pow(q.z, 3),
-                P
+            var s1 = Integer.Modulo(
+                p.Y * BigInteger.Pow(q.Z, 3),
+                primeNum
             );
-            BigInteger S2 = Utils.Integer.modulo(
-                q.y * BigInteger.Pow(p.z, 3),
-                P
+            var s2 = Integer.Modulo(
+                q.Y * BigInteger.Pow(p.Z, 3),
+                primeNum
             );
 
-            if (U1 == U2) {
-                if (S1 != S2) {
-                    return new Point(BigInteger.Zero, BigInteger.Zero, BigInteger.One);
-                }
-                return jacobianDouble(p, A, P);
+            if (u1 == u2)
+            {
+                if (s1 != s2) return new Point(BigInteger.Zero, BigInteger.Zero, BigInteger.One);
+                return JacobianDouble(p, a, primeNum);
             }
 
-            BigInteger H = U2 - U1;
-            BigInteger R = S2 - S1;
-            BigInteger H2 = Utils.Integer.modulo(H * H, P);
-            BigInteger H3 = Utils.Integer.modulo(H * H2, P);
-            BigInteger U1H2 = Utils.Integer.modulo(U1 * H2, P);
-            BigInteger nx = Utils.Integer.modulo(
-                BigInteger.Pow(R, 2) - H3 - 2 * U1H2,
-                P
+            var h = u2 - u1;
+            var r = s2 - s1;
+            var h2 = Integer.Modulo(h * h, primeNum);
+            var h3 = Integer.Modulo(h * h2, primeNum);
+            var u1H2 = Integer.Modulo(u1 * h2, primeNum);
+            var nx = Integer.Modulo(
+                BigInteger.Pow(r, 2) - h3 - 2 * u1H2,
+                primeNum
             );
-            BigInteger ny = Utils.Integer.modulo(
-                R * (U1H2 - nx) - S1 * H3,
-                P
+            var ny = Integer.Modulo(
+                r * (u1H2 - nx) - s1 * h3,
+                primeNum
             );
-            BigInteger nz = Utils.Integer.modulo(
-                H * p.z * q.z,
-                P
+            var nz = Integer.Modulo(
+                h * p.Z * q.Z,
+                primeNum
             );
 
             return new Point(
@@ -218,7 +216,9 @@ namespace EllipticCurve {
             );
         }
 
-        private static Point jacobianMultiply (Point p, BigInteger n, BigInteger N, BigInteger A, BigInteger P) {
+        private static Point JacobianMultiply(Point p, BigInteger n, BigInteger order, BigInteger a,
+            BigInteger primeNum)
+        {
             // Multily point and scalar in elliptic curves
 
             // :param p: First Point to mutiply
@@ -228,62 +228,54 @@ namespace EllipticCurve {
             // :param A: Coefficient of the first-order term of the equation Y^2 = X^3 + A*X + B (mod p)
             // :return: Point that represents the sum of First and Second Point
 
-            if (p.y.IsZero | n.IsZero) {
+            if (p.Y.IsZero | n.IsZero)
                 return new Point(
                     BigInteger.Zero,
                     BigInteger.Zero,
                     BigInteger.One
                 );
-            }
 
-            if (n.IsOne) {
-                return p;
-            }
+            if (n.IsOne) return p;
 
-            if (n < 0 | n >= N) {
-                return jacobianMultiply(
+            if ((n < 0) | (n >= order))
+                return JacobianMultiply(
                     p,
-                    Utils.Integer.modulo(n, N),
-                    N,
-                    A,
-                    P
+                    Integer.Modulo(n, n),
+                    order,
+                    a,
+                    primeNum
                 );
-            }
 
-            if (Utils.Integer.modulo(n, 2).IsZero) {
-                return jacobianDouble(
-                    jacobianMultiply(
+            if (Integer.Modulo(n, 2).IsZero)
+                return JacobianDouble(
+                    JacobianMultiply(
                         p,
                         n / 2,
-                        N,
-                        A,
-                        P
+                        order,
+                        a,
+                        primeNum
                     ),
-                    A,
-                    P
+                    a,
+                    primeNum
                 );
-            }
 
             // (n % 2) == 1:
-            return jacobianAdd(
-                jacobianDouble(
-                    jacobianMultiply(
+            return JacobianAdd(
+                JacobianDouble(
+                    JacobianMultiply(
                         p,
                         n / 2,
-                        N,
-                        A,
-                        P
+                        order,
+                        a,
+                        primeNum
                     ),
-                    A,
-                    P
+                    a,
+                    primeNum
                 ),
                 p,
-                A,
-                P
+                a,
+                primeNum
             );
-
         }
-
     }
-
 }

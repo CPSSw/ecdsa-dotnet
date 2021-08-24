@@ -1,0 +1,32 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPSSEcdsa", "EcdsaDotNet\CPSSEcdsa.csproj", "{C734E1B5-1D79-4AFC-B63B-59FD70F8F043}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPSSEcdsaTests", "EcdsaTests\CPSSEcdsaTests.csproj", "{BE4C6CCF-86CA-475A-9F9E-64BC42781C34}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C734E1B5-1D79-4AFC-B63B-59FD70F8F043}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C734E1B5-1D79-4AFC-B63B-59FD70F8F043}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C734E1B5-1D79-4AFC-B63B-59FD70F8F043}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C734E1B5-1D79-4AFC-B63B-59FD70F8F043}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE4C6CCF-86CA-475A-9F9E-64BC42781C34}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE4C6CCF-86CA-475A-9F9E-64BC42781C34}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE4C6CCF-86CA-475A-9F9E-64BC42781C34}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE4C6CCF-86CA-475A-9F9E-64BC42781C34}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		Policies = $0
+		$0.DotNetNamingPolicy = $1
+		$1.DirectoryNamespaceAssociation = PrefixedHierarchical
+		$0.StandardHeader = $2
+		$0.VersionControlPolicy = $3
+		description = Fork of pure C# implementation of the Elliptic Curve Digital Signature Algorithm (ECDSA) by Stark Bank updated with .NET 5.0 and framework interface added by XGDFalcon.
+		version = 1.3.1
+	EndGlobalSection
+EndGlobal

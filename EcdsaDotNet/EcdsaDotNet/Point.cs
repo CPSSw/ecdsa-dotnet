@@ -1,20 +1,20 @@
-﻿using System.Numerics;
+using System.Numerics;
 
+namespace EllipticCurve
+{
+    public class Point
+    {
+        public Point(BigInteger x, BigInteger y, BigInteger? z = null)
+        {
+            var zeroZ = z ?? BigInteger.Zero;
 
-namespace EllipticCurve {
-
-    public class Point {
-
-        public BigInteger x { get; }
-        public BigInteger y { get; }
-        public BigInteger z { get; }
-
-        public Point(BigInteger x, BigInteger y, BigInteger? z=null) {
-            BigInteger zeroZ = z ?? BigInteger.Zero;
-
-            this.x = x;
-            this.y = y;
-            this.z = zeroZ;
+            X = x;
+            Y = y;
+            Z = zeroZ;
         }
+
+        public BigInteger X { get; }
+        public BigInteger Y { get; }
+        public BigInteger Z { get; }
     }
 }

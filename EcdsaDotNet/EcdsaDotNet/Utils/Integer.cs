@@ -1,38 +1,37 @@
-﻿using System;
+using System;
 using System.Numerics;
 using System.Security.Cryptography;
 
-namespace EllipticCurve.Utils {
+namespace EllipticCurve.Utils
+{
+    public static class Integer
+    {
+        public static BigInteger Modulo(BigInteger dividend, BigInteger divisor)
+        {
+            var remainder = BigInteger.Remainder(dividend, divisor);
 
-    public static class Integer {
-        public static BigInteger modulo(BigInteger dividend, BigInteger divisor) {
-            BigInteger remainder = BigInteger.Remainder(dividend, divisor);
-            
-            if (remainder < 0) {
-                return remainder + divisor;
-            }
+            if (remainder < 0) return remainder + divisor;
 
             return remainder;
         }
 
-        public static BigInteger randomBetween(BigInteger minimum, BigInteger maximum) {
-            if (maximum < minimum) {
-                throw new ArgumentException("maximum must be greater than minimum");
-            }
+        public static BigInteger RandomBetween(BigInteger minimum, BigInteger maximum)
+        {
+            if (maximum < minimum) throw new ArgumentException("maximum must be greater than minimum");
 
-            BigInteger range = maximum - minimum;
+            var range = maximum - minimum;
 
-            Tuple<int, BigInteger> response = calculateParameters(range);
-            int bytesNeeded = response.Item1;
-            BigInteger mask = response.Item2;
+            var response = CalculateParameters(range);
+            var bytesNeeded = response.Item1;
+            var mask = response.Item2;
 
-            byte[] randomBytes = new byte[bytesNeeded];
+            var randomBytes = new byte[bytesNeeded];
             using (var random = RandomNumberGenerator.Create())
             {
                 random.GetBytes(randomBytes);
             }
 
-            BigInteger randomValue = new BigInteger(randomBytes);
+            var randomValue = new BigInteger(randomBytes);
 
             /* We apply the mask to reduce the amount of attempts we might need
                 * to make to get a number that is in range. This is somewhat like
@@ -54,27 +53,24 @@ namespace EllipticCurve.Utils {
 
             randomValue &= mask;
 
-            if (randomValue <= range) {
-                /* We've been working with 0 as a starting point, so we need to
+            if (randomValue <= range) /* We've been working with 0 as a starting point, so we need to
                     * add the `minimum` here. */
                 return minimum + randomValue;
-            }
 
             /* Outside of the acceptable range, throw it away and try again.
                 * We don't try any modulo tricks, as this would introduce bias. */
-            return randomBetween(minimum, maximum);
-
+            return RandomBetween(minimum, maximum);
         }
 
-        private static Tuple<int, BigInteger> calculateParameters(BigInteger range) {
-            int bitsNeeded = 0;
-            int bytesNeeded = 0;
-            BigInteger mask = new BigInteger(1);
+        private static Tuple<int, BigInteger> CalculateParameters(BigInteger range)
+        {
+            var bitsNeeded = 0;
+            var bytesNeeded = 0;
+            var mask = new BigInteger(1);
 
-            while (range > 0) {
-                if (bitsNeeded % 8 == 0) {
-                    bytesNeeded += 1;
-                }
+            while (range > 0)
+            {
+                if (bitsNeeded % 8 == 0) bytesNeeded += 1;
 
                 bitsNeeded++;
 
@@ -84,9 +80,6 @@ namespace EllipticCurve.Utils {
             }
 
             return Tuple.Create(bytesNeeded, mask);
-
         }
-
     }
-
 }
