@@ -1,12 +1,11 @@
-namespace EllipticCurve.Utils
+namespace CPSS.EllipticCurve.Utils
 {
     public static class String
     {
         public static string Substring(string str, int index, int length)
         {
             if (str.Length > index + length) return str.Substring(index, length);
-            if (str.Length > index) return str.Substring(index);
-            return "";
+            return str.Length > index ? str[index..] : "";
         }
     }
 }

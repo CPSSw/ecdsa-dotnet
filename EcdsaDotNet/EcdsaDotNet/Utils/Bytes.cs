@@ -1,6 +1,6 @@
 using System;
 
-namespace EllipticCurve.Utils
+namespace CPSS.EllipticCurve.Utils
 {
     public static class Bytes
     {

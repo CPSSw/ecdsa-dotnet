@@ -1,4 +1,4 @@
-﻿using EllipticCurve;
+﻿using CPSS.EllipticCurve;
 using Xunit;
 
 namespace CPCC.EcdsaTests

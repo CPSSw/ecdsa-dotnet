@@ -1,4 +1,4 @@
-﻿using EllipticCurve;
+﻿using CPSS.EllipticCurve;
 using Xunit;
 
 namespace CPCC.EcdsaTests
@@ -31,7 +31,7 @@ namespace CPCC.EcdsaTests
         public void TestStringConversion()
         {
             PrivateKey privateKey1 = new();
-            var str = privateKey1.ToString();
+            var str = privateKey1.ToStringFromNumber();
             var privateKey2 = PrivateKey.FromString(str);
 
             Assert.Equal(privateKey1.Secret, privateKey2.Secret);

@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Numerics;
 using System.Text;
 
-namespace EllipticCurve.Utils
+namespace CPSS.EllipticCurve.Utils
 {
     public static class BinaryAscii
     {

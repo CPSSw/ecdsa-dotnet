@@ -1,5 +1,5 @@
-﻿using EllipticCurve;
-using EllipticCurve.Utils;
+﻿using CPSS.EllipticCurve;
+using CPSS.EllipticCurve.Utils;
 using Xunit;
 
 namespace CPCC.EcdsaTests

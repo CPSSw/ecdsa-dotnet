@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using EllipticCurve.Utils;
+using CPSS.EllipticCurve.Utils;
 
-namespace EllipticCurve
+namespace CPSS.EllipticCurve
 {
     public class PublicKey
     {

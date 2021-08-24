@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using EllipticCurve.Utils;
+using CPSS.EllipticCurve.Utils;
 
-namespace EllipticCurve
+namespace CPSS.EllipticCurve
 {
     public class CurveFp
     {

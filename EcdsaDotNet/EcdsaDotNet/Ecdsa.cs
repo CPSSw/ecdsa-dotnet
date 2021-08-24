@@ -1,15 +1,39 @@
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
-using EllipticCurve.Utils;
+using CPSS.EllipticCurve.Utils;
 
-namespace EllipticCurve
+namespace CPSS.EllipticCurve
 {
-    public static class Ecdsa
+    public sealed class Ecdsa
     {
-        public static Signature Sign(string message, PrivateKey privateKey)
+        public enum HashType
         {
-            var hashMessage = Sha256(message);
+            Sha256, Sha384, Sha512
+        }
+
+        private readonly HashType _hashType;
+
+        private static HashAlgorithm CreateHashAlgorithm(HashType hash)
+        {
+            return hash switch
+            {
+                HashType.Sha256 => SHA256.Create(),
+                HashType.Sha384 => SHA384.Create(),
+                HashType.Sha512 => SHA512.Create(),
+                _ => SHA256.Create()
+            };
+        }
+        
+        
+        public Ecdsa(HashType algorithmName)
+        {
+            _hashType = algorithmName;
+        }
+        
+        public Signature Sign(string message, PrivateKey privateKey)
+        {
+            var hashMessage = Hash(message);
             var numberMessage = BinaryAscii.NumberFromHex(hashMessage);
             var curve = privateKey.Curve;
             var randNum = Integer.RandomBetween(BigInteger.One, curve.N - 1);
@@ -20,9 +44,9 @@ namespace EllipticCurve
             return new Signature(r, s);
         }
 
-        public static bool Verify(string message, Signature signature, PublicKey publicKey)
+        public bool Verify(string message, Signature signature, PublicKey publicKey)
         {
-            var hashMessage = Sha256(message);
+            var hashMessage = Hash(message);
             var numberMessage = BinaryAscii.NumberFromHex(hashMessage);
             var curve = publicKey.Curve;
             var sigR = signature.R;
@@ -52,18 +76,16 @@ namespace EllipticCurve
 
             return sigR == add.X;
         }
-
-        private static string Sha256(string message)
+        
+        private string Hash(string message)
         {
-            byte[] bytes;
-
-            using (var sha256Hash = SHA256.Create())
-            {
-                bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(message));
-            }
-
+            using var shaHash = CreateHashAlgorithm(_hashType);
+            var bytes = shaHash.ComputeHash(Encoding.UTF8.GetBytes(message));
             var builder = new StringBuilder();
-            for (var i = 0; i < bytes.Length; i++) builder.Append(bytes[i].ToString("x2"));
+            foreach (var t in bytes)
+            {
+                builder.Append(t.ToString("x2"));
+            }
 
             return builder.ToString();
         }

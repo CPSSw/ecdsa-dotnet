@@ -2,7 +2,7 @@ using System;
 using System.Numerics;
 using System.Security.Cryptography;
 
-namespace EllipticCurve.Utils
+namespace CPSS.EllipticCurve.Utils
 {
     public static class Integer
     {
@@ -17,23 +17,23 @@ namespace EllipticCurve.Utils
 
         public static BigInteger RandomBetween(BigInteger minimum, BigInteger maximum)
         {
-            if (maximum < minimum) throw new ArgumentException("maximum must be greater than minimum");
-
-            var range = maximum - minimum;
-
-            var response = CalculateParameters(range);
-            var bytesNeeded = response.Item1;
-            var mask = response.Item2;
-
-            var randomBytes = new byte[bytesNeeded];
-            using (var random = RandomNumberGenerator.Create())
+            while (true)
             {
-                random.GetBytes(randomBytes);
-            }
+                if (maximum < minimum) throw new ArgumentException("maximum must be greater than minimum");
 
-            var randomValue = new BigInteger(randomBytes);
+                var range = maximum - minimum;
 
-            /* We apply the mask to reduce the amount of attempts we might need
+                var (bytesNeeded, mask) = CalculateParameters(range);
+
+                var randomBytes = new byte[bytesNeeded];
+                using (var random = RandomNumberGenerator.Create())
+                {
+                    random.GetBytes(randomBytes);
+                }
+
+                var randomValue = new BigInteger(randomBytes);
+
+                /* We apply the mask to reduce the amount of attempts we might need
                 * to make to get a number that is in range. This is somewhat like
                 * the commonly used 'modulo trick', but without the bias:
                 *
@@ -51,15 +51,15 @@ namespace EllipticCurve.Utils
                 *   (Source: Scott Arciszewski)
                 */
 
-            randomValue &= mask;
+                randomValue &= mask;
 
-            if (randomValue <= range) /* We've been working with 0 as a starting point, so we need to
+                if (randomValue <= range) /* We've been working with 0 as a starting point, so we need to
                     * add the `minimum` here. */
-                return minimum + randomValue;
+                    return minimum + randomValue;
 
-            /* Outside of the acceptable range, throw it away and try again.
+                /* Outside of the acceptable range, throw it away and try again.
                 * We don't try any modulo tricks, as this would introduce bias. */
-            return RandomBetween(minimum, maximum);
+            }
         }
 
         private static Tuple<int, BigInteger> CalculateParameters(BigInteger range)

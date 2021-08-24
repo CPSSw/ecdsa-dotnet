@@ -1,16 +1,16 @@
 using System.Numerics;
-using EllipticCurve.Utils;
+using CPSS.EllipticCurve.Utils;
 
-namespace EllipticCurve
+namespace CPSS.EllipticCurve
 {
     public static class EcdsaMath
     {
         public static Point Multiply(Point p, BigInteger n, BigInteger order, BigInteger coef, BigInteger primenum)
         {
-            //Fast way to multily point and scalar in elliptic curves
+            //Fast way to multiply point and scalar in elliptic curves
 
-            //:param p: First Point to mutiply
-            //:param n: Scalar to mutiply
+            //:param p: First Point to multiply
+            //:param n: Scalar to multiply
             //: param N: Order of the elliptic curve
             // : param P: Prime number in the module of the equation Y^2 = X ^ 3 + A * X + B(mod p)
             //:param A: Coefficient of the first-order term of the equation Y ^ 2 = X ^ 3 + A * X + B(mod p)

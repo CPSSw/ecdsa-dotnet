@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace EllipticCurve
+namespace CPSS.EllipticCurve
 {
     public class Point
     {

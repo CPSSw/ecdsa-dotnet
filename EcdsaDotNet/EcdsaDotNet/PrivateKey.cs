@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using EllipticCurve.Utils;
+using CPSS.EllipticCurve.Utils;
 
-namespace EllipticCurve
+namespace CPSS.EllipticCurve
 {
     public class PrivateKey
     {
@@ -11,7 +11,7 @@ namespace EllipticCurve
         {
             Curve = Curves.GetCurveByName(curve);
 
-            if (secret == null) secret = Integer.RandomBetween(1, Curve.N - 1);
+            secret ??= Integer.RandomBetween(1, Curve.N - 1);
             Secret = (BigInteger)secret;
         }
 
@@ -24,7 +24,7 @@ namespace EllipticCurve
             return new PublicKey(publicPoint, Curve);
         }
 
-        public byte[] ToString()
+        public byte[] ToStringFromNumber()
         {
             return BinaryAscii.StringFromNumber(Secret, Curve.Length());
         }
@@ -37,7 +37,7 @@ namespace EllipticCurve
                 new List<byte[]>
                 {
                     Der.EncodeInteger(1),
-                    Der.EncodeOctetString(ToString()),
+                    Der.EncodeOctetString(ToStringFromNumber()),
                     Der.EncodeConstructed(0, Der.EncodeOid(Curve.Oid)),
                     Der.EncodeConstructed(1, encodedPublicKey)
                 }
@@ -60,29 +60,26 @@ namespace EllipticCurve
 
         public static PrivateKey FromDer(byte[] der)
         {
-            var removeSequence = Der.RemoveSequence(der);
-            if (removeSequence.Item2.Length > 0)
+            var (bytes, item2) = Der.RemoveSequence(der);
+            if (item2.Length > 0)
                 throw new ArgumentException("trailing junk after DER private key: " +
-                                            BinaryAscii.HexFromBinary(removeSequence.Item2));
+                                            BinaryAscii.HexFromBinary(item2));
 
-            var removeInteger = Der.RemoveInteger(removeSequence.Item1);
-            if (removeInteger.Item1 != 1)
-                throw new ArgumentException("expected '1' at start of DER private key, got " + removeInteger.Item1);
+            var (item1, bytes1) = Der.RemoveInteger(bytes);
+            if (item1 != 1)
+                throw new ArgumentException("expected '1' at start of DER private key, got " + item1);
 
-            var removeOctetString = Der.RemoveOctetString(removeInteger.Item2);
+            var removeOctetString = Der.RemoveOctetString(bytes1);
             var privateKeyStr = removeOctetString.Item1;
 
-            var removeConstructed = Der.RemoveConstructed(removeOctetString.Item2);
-            var tag = removeConstructed.Item1;
-            var curveOidString = removeConstructed.Item2;
+            var (tag, curveOidString, _) = Der.RemoveConstructed(removeOctetString.Item2);
             if (tag != 0) throw new ArgumentException("expected tag 0 in DER private key, got " + tag);
 
-            var removeObject = Der.RemoveObject(curveOidString);
-            var oidCurve = removeObject.Item1;
-            if (removeObject.Item2.Length > 0)
+            var (oidCurve, item3) = Der.RemoveObject(curveOidString);
+            if (item3.Length > 0)
                 throw new ArgumentException(
                     "trailing junk after DER private key curve_oid: " +
-                    BinaryAscii.HexFromBinary(removeObject.Item2)
+                    BinaryAscii.HexFromBinary(item3)
                 );
 
             var stringOid = string.Join(",", oidCurve);
@@ -102,14 +99,12 @@ namespace EllipticCurve
 
             var curve = Curves.CurvesByOid[stringOid];
 
-            if (privateKeyStr.Length < curve.Length())
-            {
-                var length = curve.Length() - privateKeyStr.Length;
-                var padding = "";
-                for (var i = 0; i < length; i++) padding += "00";
-                privateKeyStr = Der.CombineByteArrays(new List<byte[]>
-                    { BinaryAscii.BinaryFromHex(padding), privateKeyStr });
-            }
+            if (privateKeyStr.Length >= curve.Length()) return FromString(privateKeyStr, curve.Name);
+            var length = curve.Length() - privateKeyStr.Length;
+            var padding = "";
+            for (var i = 0; i < length; i++) padding += "00";
+            privateKeyStr = Der.CombineByteArrays(new List<byte[]>
+                { BinaryAscii.BinaryFromHex(padding), privateKeyStr });
 
             return FromString(privateKeyStr, curve.Name);
         }

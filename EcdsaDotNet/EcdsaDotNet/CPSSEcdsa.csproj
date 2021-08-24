@@ -1,36 +1,38 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-    <RootNamespace>CPSS.EllipticCurve</RootNamespace>
-    <PackOnBuild>true</PackOnBuild>
-    <PackageId>cpss-ecdsa</PackageId>
-    <PackageVersion>1.3.1.a</PackageVersion>
-    <Authors>Stark Bank, XGDFalcon</Authors>
-    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
-    <Owners>Stark Bank, XGDFalcon</Owners>
-    <PackageProjectUrl>https://github.com/cpssw/ecdsa-dotnet</PackageProjectUrl>
-    <Summary>Pure C# implementation of the Elliptic Curve Digital Signature Algorithm (ECDSA)</Summary>
-    <Title>.NET 5.0 ECDSA</Title>
-    <Description>For of a pure C# implementation of the Elliptic Curve Digital Signature Algorithm (ECDSA) by Stark Bank updated to .NET 5.0 with other improvements.</Description>
-    <PackageTags>ecdsa, digital-signature, elliptic-curve</PackageTags>
-    <ReleaseVersion>1.3.1.a</ReleaseVersion>
-    <NeutralLanguage>en-US</NeutralLanguage>
-  </PropertyGroup>
-  <Choose>
-    <When Condition=" '$(Configuration)'=='Debug' ">
-      <PropertyGroup>
-        <SignAssembly>false</SignAssembly>
-      </PropertyGroup>
-    </When>
-    <When Condition=" '$(Configuration)'=='Release' ">
-      <PropertyGroup>
-        <SignAssembly>true</SignAssembly>
-        <DelaySign>false</DelaySign>
-        <AssemblyOriginatorKeyFile>../../tools/private.snk</AssemblyOriginatorKeyFile>
-      </PropertyGroup>
-    </When>
-  </Choose>
-  <ItemGroup>
-    <Folder Include="Utils\" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <RootNamespace>CPSS.EllipticCurve</RootNamespace>
+        <PackOnBuild>true</PackOnBuild>
+        <PackageId>cpss-ecdsa</PackageId>
+        <PackageVersion>1.3.1-1</PackageVersion>
+        <Authors>Stark Bank, XGDFalcon®</Authors>
+        <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+        <Owners>Stark Bank, XGDFalcon</Owners>
+        <PackageProjectUrl>https://github.com/cpssw/ecdsa-dotnet</PackageProjectUrl>
+        <Summary>Pure C# implementation of the Elliptic Curve Digital Signature Algorithm (ECDSA)</Summary>
+        <Title>.NET 5.0 ECDSA</Title>
+        <Description>For of a pure C# implementation of the Elliptic Curve Digital Signature Algorithm (ECDSA) by Stark Bank updated to .NET 5.0 with other improvements.</Description>
+        <PackageTags>ecdsa, digital-signature, elliptic-curve</PackageTags>
+        <ReleaseVersion>1.3.1.a</ReleaseVersion>
+        <NeutralLanguage>en-US</NeutralLanguage>
+        <LangVersion>latestmajor</LangVersion>
+        <Copyright>XGDFalcon®</Copyright>
+    </PropertyGroup>
+    <Choose>
+        <When Condition=" '$(Configuration)'=='Debug' ">
+            <PropertyGroup>
+                <SignAssembly>false</SignAssembly>
+            </PropertyGroup>
+        </When>
+        <When Condition=" '$(Configuration)'=='Release' ">
+            <PropertyGroup>
+                <SignAssembly>true</SignAssembly>
+                <DelaySign>false</DelaySign>
+                <AssemblyOriginatorKeyFile>../../tools/private.snk</AssemblyOriginatorKeyFile>
+            </PropertyGroup>
+        </When>
+    </Choose>
+    <ItemGroup>
+        <Folder Include="Utils\" />
+    </ItemGroup>
 </Project>

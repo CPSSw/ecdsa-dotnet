@@ -1,24 +1,25 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 
-namespace EllipticCurve.Utils
+namespace CPSS.EllipticCurve.Utils
 {
     public static class Der
     {
-        private static readonly int Hex31 = 0x1f;
-        private static readonly int Hex127 = 0x7f;
-        private static readonly int Hex128 = 0x80;
-        private static readonly int Hex160 = 0xa0;
-        private static readonly int Hex224 = 0xe0;
+        private const int Hex31 = 0x1f;
+        private const int Hex127 = 0x7f;
+        private const int Hex128 = 0x80;
+        private const int Hex160 = 0xa0;
+        private const int Hex224 = 0xe0;
 
-        private static readonly string HexAt = "00";
-        private static readonly string HexB = "02";
-        private static readonly string HexC = "03";
-        private static readonly string HexD = "04";
-        private static readonly string HexF = "06";
-        private static readonly string Hex0 = "30";
+        private const string HexAt = "00";
+        private const string HexB = "02";
+        private const string HexC = "03";
+        private const string HexD = "04";
+        private const string HexF = "06";
+        private const string Hex0 = "30";
 
         private static readonly byte[] BytesHexAt = BinaryAscii.BinaryFromHex(HexAt);
         private static readonly byte[] BytesHexB = BinaryAscii.BinaryFromHex(HexB);
@@ -29,8 +30,7 @@ namespace EllipticCurve.Utils
 
         public static byte[] EncodeSequence(List<byte[]> encodedPieces)
         {
-            var totalLengthLen = 0;
-            foreach (var piece in encodedPieces) totalLengthLen += piece.Length;
+            var totalLengthLen = encodedPieces.Sum(piece => piece.Length);
             var sequence = new List<byte[]> { BytesHex0, EncodeLength(totalLengthLen) };
             sequence.AddRange(encodedPieces);
             return CombineByteArrays(sequence);
@@ -125,9 +125,7 @@ namespace EllipticCurve.Utils
         {
             CheckSequenceError(bytes, Hex0, "30");
 
-            var readLengthResult = ReadLength(Bytes.SliceByteArray(bytes, 1));
-            var length = readLengthResult.Item1;
-            var lengthLen = readLengthResult.Item2;
+            var (length, lengthLen) = ReadLength(Bytes.SliceByteArray(bytes, 1));
 
             var endSeq = 1 + lengthLen + length;
 
@@ -141,9 +139,7 @@ namespace EllipticCurve.Utils
         {
             CheckSequenceError(bytes, HexB, "02");
 
-            var readLengthResult = ReadLength(Bytes.SliceByteArray(bytes, 1));
-            var length = readLengthResult.Item1;
-            var lengthLen = readLengthResult.Item2;
+            var (length, lengthLen) = ReadLength(Bytes.SliceByteArray(bytes, 1));
 
             var numberBytes = Bytes.SliceByteArray(bytes, 1 + lengthLen, length);
             var rest = Bytes.SliceByteArray(bytes, 1 + lengthLen + length);
@@ -161,20 +157,17 @@ namespace EllipticCurve.Utils
         {
             CheckSequenceError(bytes, HexF, "06");
 
-            var readLengthResult = ReadLength(Bytes.SliceByteArray(bytes, 1));
-            var length = readLengthResult.Item1;
-            var lengthLen = readLengthResult.Item2;
+            var (length, lengthLen) = ReadLength(Bytes.SliceByteArray(bytes, 1));
 
             var body = Bytes.SliceByteArray(bytes, 1 + lengthLen, length);
             var rest = Bytes.SliceByteArray(bytes, 1 + lengthLen + length);
 
             var numbers = new List<int>();
-            Tuple<int, int> readNumberResult;
             while (body.Length > 0)
             {
-                readNumberResult = ReadNumber(body);
-                numbers.Add(readNumberResult.Item1);
-                body = Bytes.SliceByteArray(body, readNumberResult.Item2);
+                var (item1, item2) = ReadNumber(body);
+                numbers.Add(item1);
+                body = Bytes.SliceByteArray(body, item2);
             }
 
             var n0 = numbers[0];
@@ -227,9 +220,7 @@ namespace EllipticCurve.Utils
 
             var tag = s0 & Hex31;
 
-            var readLengthResult = ReadLength(Bytes.SliceByteArray(bytes, 1));
-            var length = readLengthResult.Item1;
-            var lengthLen = readLengthResult.Item2;
+            var (length, lengthLen) = ReadLength(Bytes.SliceByteArray(bytes, 1));
 
             var body = Bytes.SliceByteArray(bytes, 1 + lengthLen, length);
             var rest = Bytes.SliceByteArray(bytes, 1 + lengthLen + length);
@@ -240,13 +231,7 @@ namespace EllipticCurve.Utils
         public static byte[] FromPem(string pem)
         {
             var split = pem.Split(new[] { "\n" }, StringSplitOptions.None);
-            var stripped = new List<string>();
-
-            for (var i = 0; i < split.Length; i++)
-            {
-                var line = split[i].Trim();
-                if (String.Substring(line, 0, 5) != "-----") stripped.Add(line);
-            }
+            var stripped = split.Select(t => t.Trim()).Where(line => String.Substring(line, 0, 5) != "-----").ToList();
 
             return Base64.Decode(string.Join("", stripped));
         }
@@ -265,8 +250,7 @@ namespace EllipticCurve.Utils
 
         public static byte[] CombineByteArrays(List<byte[]> byteArrayList)
         {
-            var totalLength = 0;
-            foreach (var bytes in byteArrayList) totalLength += bytes.Length;
+            var totalLength = byteArrayList.Sum(bytes => bytes.Length);
 
             var combined = new byte[totalLength];
             var consumedLength = 0;
@@ -282,9 +266,13 @@ namespace EllipticCurve.Utils
 
         private static byte[] EncodeLength(int length)
         {
-            if (length < 0) throw new ArgumentException("length cannot be negative");
-
-            if (length < Hex128) return Bytes.IntToCharBytes(length);
+            switch (length)
+            {
+                case < 0:
+                    throw new ArgumentException("length cannot be negative");
+                case < Hex128:
+                    return Bytes.IntToCharBytes(length);
+            }
 
             var s = length.ToString("X");
             if (s.Length % 2 == 1) s = "0" + s;
@@ -319,9 +307,7 @@ namespace EllipticCurve.Utils
 
             b128Digits[b128DigitsCount - 1] &= Hex127;
 
-            var byteList = new List<byte[]>();
-
-            foreach (var digit in b128Digits) byteList.Add(Bytes.IntToCharBytes(digit));
+            var byteList = b128Digits.Select(Bytes.IntToCharBytes).ToList();
 
             return CombineByteArrays(byteList);
         }
@@ -349,14 +335,13 @@ namespace EllipticCurve.Utils
         {
             var number = 0;
             var lengthLen = 0;
-            int d;
 
             while (true)
             {
                 if (lengthLen > str.Length) throw new ArgumentException("ran out of length bytes");
 
                 number <<= 7;
-                d = str[lengthLen];
+                int d = str[lengthLen];
                 number += d & Hex127;
                 lengthLen += 1;
                 if ((d & Hex128) == 0) break;
